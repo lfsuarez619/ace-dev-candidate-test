@@ -1,0 +1,57 @@
+# =============================================
+# C# / .NET API Dockerfile
+# =============================================
+# This is a multi-stage build that:
+#   1. Builds your .NET project
+#   2. Creates a small runtime image
+#
+# USAGE:
+#   1. Copy this file to your project folder as 'Dockerfile'
+#   2. Update the paths below to match your project structure
+#   3. Build: docker build -t my-api .
+#   4. Run:   docker run -p 5001:8080 my-api
+# =============================================
+
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy project file and restore dependencies
+# UPDATE: Change 'YourProject.csproj' to your actual .csproj filename
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy source code and build
+COPY . ./
+RUN dotnet publish -c Release -o /app/publish
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+
+# Copy built application
+COPY --from=build /app/publish .
+
+# Expose port (ASP.NET Core defaults to 8080 in containers)
+EXPOSE 8080
+
+# Run the application
+# UPDATE: Change 'YourProject.dll' to your actual DLL name
+ENTRYPOINT ["dotnet", "YourProject.dll"]
+
+# =============================================
+# ENVIRONMENT VARIABLES
+# =============================================
+# You can set these when running the container:
+#
+#   docker run -p 5001:8080 \
+#     -e "ConnectionStrings__DefaultConnection=Server=..." \
+#     -e "ApiKey=your-api-key" \
+#     my-api
+#
+# Or in docker-compose.yml:
+#
+#   environment:
+#     - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=AceInvoice;...
+#     - ApiKey=your-api-key
+# =============================================

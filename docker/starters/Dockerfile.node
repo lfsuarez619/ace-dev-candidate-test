@@ -1,0 +1,101 @@
+# =============================================
+# Node.js API Dockerfile
+# =============================================
+# This is a multi-stage build that works with any Node.js framework
+# (Express, Fastify, NestJS, Hapi, Koa, Next.js API routes, etc.)
+#
+# REQUIREMENTS:
+#   Your package.json must have these scripts:
+#     "build": "..."    (for TypeScript projects)
+#     "start": "..."    (to run the production server)
+#
+# USAGE:
+#   1. Copy this file to your project folder as 'Dockerfile'
+#   2. Ensure package.json has "build" and "start" scripts
+#   3. Build: docker build -t my-api .
+#   4. Run:   docker run -p 5001:8080 my-api
+# =============================================
+
+# Stage 1: Build
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Copy package files and install ALL dependencies (including devDependencies)
+COPY package*.json ./
+RUN npm install
+
+# Copy source code
+COPY . ./
+
+# Build the project (runs your "build" script from package.json)
+# For TypeScript: typically "tsc" or "tsup" or "esbuild"
+# For JavaScript: you can make this a no-op with "build": "echo 'No build step'"
+RUN npm run build
+
+# Stage 2: Production
+FROM node:20-alpine
+WORKDIR /app
+
+# Copy package files and install production dependencies only
+COPY package*.json ./
+RUN npm install --omit=dev
+
+# Copy built application from build stage
+# NOTE: Adjust based on your framework's output folder
+COPY --from=build /app/dist ./dist
+# For Next.js, uncomment these instead:
+# COPY --from=build /app/.next ./.next
+# COPY --from=build /app/public ./public
+
+# Expose port
+EXPOSE 8080
+ENV PORT=8080
+
+# Run using your "start" script from package.json
+# This works with any framework - just define "start" in package.json
+CMD ["npm", "start"]
+
+# =============================================
+# EXAMPLE package.json SCRIPTS
+# =============================================
+#
+# TypeScript + Express/Fastify:
+#   "scripts": {
+#     "build": "tsc",
+#     "start": "node dist/index.js"
+#   }
+#
+# JavaScript (no build step):
+#   "scripts": {
+#     "build": "echo 'No build step'",
+#     "start": "node src/index.js"
+#   }
+#
+# NestJS:
+#   "scripts": {
+#     "build": "nest build",
+#     "start": "node dist/main.js"
+#   }
+#
+# Next.js (API routes):
+#   "scripts": {
+#     "build": "next build",
+#     "start": "next start -p 8080"
+#   }
+#   NOTE: For Next.js, also update the COPY lines above to include .next/
+#
+# =============================================
+
+# =============================================
+# ENVIRONMENT VARIABLES
+# =============================================
+# Set these when running the container or in docker-compose.yml:
+#
+#   DB_SERVER, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, API_KEY
+#
+# Example:
+#   docker run -p 5001:8080 \
+#     -e "DB_SERVER=host.docker.internal" \
+#     -e "API_KEY=your-api-key" \
+#     my-api
+# =============================================
