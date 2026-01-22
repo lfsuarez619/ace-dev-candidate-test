@@ -57,21 +57,23 @@ Expected:
 
 What initializes the DB?
 
-Docker runs docker/init.sql automatically on startup.
-The deliverable schema script is database/init.sql.
+Docker runs ```docker/init.sql``` automatically on startup.
+The deliverable schema script is ```database/init.sql```.
 
 If you update the deliverable schema, keep Docker’s init in sync:
 
 ```cp database/init.sql docker/init.sql```
 
-##Connect with a SQL client (optional)
+## Connect with a SQL client (optional)
 
 Connection info:
 
+```
 Server: localhost,1433
 User: sa
 Password: (from docker-compose.yml, often YourStrong@Passw0rd unless overridden)
 Database: AceInvoice
+```
 
 ---
 
@@ -80,8 +82,7 @@ Database: AceInvoice
 The API reads DB configuration from environment variables via dotenv (no hard-coded credentials).
 
 ### Create a local .env
-cp src/.env.example src/.env
-
+```cp src/.env.example src/.env```
 
 Edit src/.env and set values. Example:
 ```
@@ -130,20 +131,20 @@ Use that same value in the ```x-api-key``` header when calling endpoints
 ## Endpoints
 
 ### Public (no auth):
-
--GET /api/public/hello
-
+```
+- GET /api/public/hello
+```
 ### Auth required:
-
+```
 - GET /api/customer/viewall
 - GET /api/product/viewall
 - GET /api/order/viewall
 - GET /api/order/vieworderdetail
 - GET /api/order/details/{invoiceNumber}
 - POST /api/order/new
-
+```
 ## Testing
-##Quick Smoke Tests (curl)
+### Quick Smoke Tests (curl)
 
 Health check (no auth):
 
@@ -159,7 +160,7 @@ Verify auth enforcement (should return 401):
 
 ```curl -i http://localhost:5001/api/product/viewall```
 
-Postman Testing (Local)
+### Postman Testing (Local)
 
 1. Import the collection:
 
