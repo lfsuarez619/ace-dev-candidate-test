@@ -1,0 +1,26 @@
+[
+  {
+    "customerId": "aa5fd07a-05d6-460f-b8e3-6a09142f9d71",
+    "customerName": "Smith, LLC",
+    "customerAddress1": "505 Central Avenue",
+    "customerAddress2": "Suite 100",
+    "customerCity": "San Diego",
+    "customerState": "CA",
+    "customerPostalCode": "90383",
+    "customerTelephone": "619-483-0987",
+    "customerContactName": "Jane Smith",
+    "customerEmailAddress": "email@jane.com"
+  },
+  {
+    "customerId": "15907644-3f44-448b-b64e-a949c529fa0b",
+    "customerName": "Doe, Inc",
+    "customerAddress1": "123 Main Street",
+    "customerAddress2": null,
+    "customerCity": "Los Angeles",
+    "customerState": "CA",
+    "customerPostalCode": "90010",
+    "customerTelephone": "310-555-1212",
+    "customerContactName": "John Doe",
+    "customerEmailAddress": "email@doe.com"
+  }
+]

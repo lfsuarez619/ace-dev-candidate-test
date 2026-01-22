@@ -1,0 +1,22 @@
+[
+  {
+    "productId": "26812d43-cee0-4413-9a1b-0b2eabf7e92c",
+    "productName": "Thingie",
+    "productCost": 2.00
+  },
+  {
+    "productId": "3c85f645-ce57-43a8-b192-7f46f8bbc273",
+    "productName": "Gadget",
+    "productCost": 5.15
+  },
+  {
+    "productId": "a102e2b7-30d6-4ab6-b92b-8570a7e1659c",
+    "productName": "Gizmo",
+    "productCost": 1.00
+  },
+  {
+    "productId": "9e3ef8ce-a6fd-4c9b-ac5d-c3cb471e1e27",
+    "productName": "Widget",
+    "productCost": 2.50
+  }
+]

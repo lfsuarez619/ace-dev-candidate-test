@@ -1,191 +1,200 @@
-/* database/stored-procs.sql
-   Stored procedures for the assessment
-*/
-
 USE AceInvoice;
 GO
 
--- Get all customers
+-- Customers
 CREATE OR ALTER PROCEDURE dbo.uspCustomer_GetAll
-AS
+    AS
 BEGIN
-    SET NOCOUNT ON;
-    SELECT customerId, customerName, email, createdAtUtc
-    FROM dbo.Customers
-    ORDER BY customerId;
+  SET NOCOUNT ON;
+SELECT
+    customerId,
+    customerName,
+    customerAddress1,
+    customerAddress2,
+    customerCity,
+    customerState,
+    customerPostalCode,
+    customerTelephone,
+    customerContactName,
+    customerEmailAddress
+FROM dbo.Customers
+ORDER BY customerName;
 END
 GO
 
--- Get all products
+-- Products
 CREATE OR ALTER PROCEDURE dbo.uspProduct_GetAll
-AS
+    AS
 BEGIN
-    SET NOCOUNT ON;
-    SELECT productId, sku, productName, unitPrice, isActive, createdAtUtc
-    FROM dbo.Products
-    ORDER BY productId;
+  SET NOCOUNT ON;
+SELECT
+    productId,
+    productName,
+    productCost
+FROM dbo.Products
+ORDER BY productName;
 END
 GO
 
--- Get all orders (summary)
+-- Orders (summary)
 CREATE OR ALTER PROCEDURE dbo.uspOrder_GetAll
-AS
+    AS
 BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        o.invoiceNumber,
-        o.invoiceDateUtc,
-        o.status,
-        o.customerId,
-        c.customerName,
-        CAST(ISNULL(SUM(oi.quantity * oi.unitPrice), 0) AS DECIMAL(10,2)) AS orderTotal
-    FROM dbo.Orders o
-    JOIN dbo.Customers c ON c.customerId = o.customerId
-    LEFT JOIN dbo.OrderItems oi ON oi.invoiceNumber = o.invoiceNumber
-    GROUP BY o.invoiceNumber, o.invoiceDateUtc, o.status, o.customerId, c.customerName
-    ORDER BY o.invoiceNumber DESC;
+  SET NOCOUNT ON;
+SELECT
+    invoiceNumber,
+    invoiceDate,
+    customerId
+FROM dbo.Orders
+ORDER BY invoiceNumber;
 END
 GO
 
--- Get a specific order with full details
-CREATE OR ALTER PROCEDURE dbo.uspOrder_GetByInvoiceNumber
+-- One invoice details (3 recordsets: customerDetail, orderDetail, lineItems)
+CREATE OR ALTER PROCEDURE dbo.uspOrder_GetInvoiceDetails
     @invoiceNumber INT
-AS
+    AS
 BEGIN
-    SET NOCOUNT ON;
+  SET NOCOUNT ON;
 
-    -- Header
-    SELECT
-        o.invoiceNumber,
-        o.invoiceDateUtc,
-        o.status,
-        o.customerId,
-        c.customerName,
-        c.email
-    FROM dbo.Orders o
-    JOIN dbo.Customers c ON c.customerId = o.customerId
-    WHERE o.invoiceNumber = @invoiceNumber;
+  -- customerDetail
+SELECT
+    c.customerId,
+    c.customerName,
+    c.customerAddress1,
+    c.customerAddress2,
+    c.customerCity,
+    c.customerState,
+    c.customerPostalCode,
+    c.customerTelephone,
+    c.customerContactName,
+    c.customerEmailAddress
+FROM dbo.Orders o
+         JOIN dbo.Customers c ON c.customerId = o.customerId
+WHERE o.invoiceNumber = @invoiceNumber;
 
-    -- Line items
-    SELECT
-        oi.orderItemId,
-        oi.invoiceNumber,
-        oi.productId,
-        p.sku,
-        p.productName,
-        oi.quantity,
-        oi.unitPrice,
-        CAST(oi.quantity * oi.unitPrice AS DECIMAL(10,2)) AS lineTotal
-    FROM dbo.OrderItems oi
-    JOIN dbo.Products p ON p.productId = oi.productId
-    WHERE oi.invoiceNumber = @invoiceNumber
-    ORDER BY oi.orderItemId;
+-- orderDetail
+SELECT
+    o.invoiceNumber,
+    o.invoiceDate,
+    o.customerId
+FROM dbo.Orders o
+WHERE o.invoiceNumber = @invoiceNumber;
+
+-- lineItems
+SELECT
+    li.lineItemId,
+    li.productId,
+    li.quantity,
+    o.invoiceDate,
+    p.productName,
+    li.productCost,
+    CAST(li.quantity * li.productCost AS DECIMAL(10,2)) AS totalCost
+FROM dbo.Orders o
+         LEFT JOIN dbo.LineItems li ON li.invoiceNumber = o.invoiceNumber
+         LEFT JOIN dbo.Products p ON p.productId = li.productId
+WHERE o.invoiceNumber = @invoiceNumber
+ORDER BY li.lineItemId;
 END
 GO
 
--- Get all orders with line item details (useful for /vieworderdetail)
-CREATE OR ALTER PROCEDURE dbo.uspOrder_GetAllWithDetails
-AS
+-- All invoices with details (flat rows for Node to group)
+CREATE OR ALTER PROCEDURE dbo.uspOrder_GetAllInvoiceDetails_Flat
+    AS
 BEGIN
-    SET NOCOUNT ON;
+  SET NOCOUNT ON;
 
-    SELECT
-        o.invoiceNumber,
-        o.invoiceDateUtc,
-        o.status,
-        o.customerId,
-        c.customerName,
-        oi.orderItemId,
-        oi.productId,
-        p.sku,
-        p.productName,
-        oi.quantity,
-        oi.unitPrice
-    FROM dbo.Orders o
-    JOIN dbo.Customers c ON c.customerId = o.customerId
-    LEFT JOIN dbo.OrderItems oi ON oi.invoiceNumber = o.invoiceNumber
-    LEFT JOIN dbo.Products p ON p.productId = oi.productId
-    ORDER BY o.invoiceNumber DESC, oi.orderItemId;
+SELECT
+    -- customerDetail fields
+    c.customerId,
+    c.customerName,
+    c.customerAddress1,
+    c.customerAddress2,
+    c.customerCity,
+    c.customerState,
+    c.customerPostalCode,
+    c.customerTelephone,
+    c.customerContactName,
+    c.customerEmailAddress,
+
+    -- orderDetail fields
+    o.invoiceNumber,
+    o.invoiceDate,
+    o.customerId AS orderCustomerId,
+
+    -- line item fields (nullable when no items)
+    li.lineItemId,
+    li.productId,
+    li.quantity,
+    p.productName,
+    li.productCost,
+    CAST(li.quantity * li.productCost AS DECIMAL(10,2)) AS totalCost
+FROM dbo.Orders o
+         JOIN dbo.Customers c ON c.customerId = o.customerId
+         LEFT JOIN dbo.LineItems li ON li.invoiceNumber = o.invoiceNumber
+         LEFT JOIN dbo.Products p ON p.productId = li.productId
+ORDER BY o.invoiceNumber, li.lineItemId;
 END
 GO
 
-/* Add a new order (with line items)
-   Input JSON format example:
-   [
-     {"productId": 1, "quantity": 2},
-     {"productId": 2, "quantity": 1}
-   ]
-*/
+-- Create a new order (expects JSON items: [{productId:"guid", quantity: 1}, ...])
 CREATE OR ALTER PROCEDURE dbo.uspOrder_Create
-    @customerId INT,
+    @customerId UNIQUEIDENTIFIER,
+    @invoiceDate DATETIME2(0) = NULL,
     @itemsJson NVARCHAR(MAX)
-AS
+    AS
 BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
 
-    -- Validate customer exists
-    IF NOT EXISTS (SELECT 1 FROM dbo.Customers WHERE customerId = @customerId)
-    BEGIN
-        THROW 50001, 'Customer does not exist.', 1;
-    END
+  IF NOT EXISTS (SELECT 1 FROM dbo.Customers WHERE customerId = @customerId)
+    THROW 50001, 'Customer does not exist.', 1;
 
-    -- Parse items JSON
-    DECLARE @items TABLE (
-        productId INT NOT NULL,
-        quantity  INT NOT NULL
-    );
+  DECLARE @items TABLE (
+    productId UNIQUEIDENTIFIER NOT NULL,
+    quantity  INT NOT NULL
+  );
 
-    INSERT INTO @items(productId, quantity)
-    SELECT productId, quantity
-    FROM OPENJSON(@itemsJson)
+INSERT INTO @items(productId, quantity)
+SELECT productId, quantity
+FROM OPENJSON(@itemsJson)
     WITH (
-        productId INT '$.productId',
-        quantity  INT '$.quantity'
+    productId UNIQUEIDENTIFIER '$.productId',
+    quantity  INT '$.quantity'
     );
 
-    -- Validate at least one item
-    IF NOT EXISTS (SELECT 1 FROM @items)
-    BEGIN
-        THROW 50002, 'Order must include at least one line item.', 1;
-    END
+IF NOT EXISTS (SELECT 1 FROM @items)
+    THROW 50002, 'Order must include at least one line item.', 1;
 
-    -- Validate quantities
-    IF EXISTS (SELECT 1 FROM @items WHERE quantity IS NULL OR quantity <= 0)
-    BEGIN
-        THROW 50003, 'Line item quantity must be > 0.', 1;
-    END
+  IF EXISTS (SELECT 1 FROM @items WHERE quantity <= 0)
+    THROW 50003, 'Line item quantity must be > 0.', 1;
 
-    -- Validate products exist (answers “what if someone orders a product that doesn’t exist?”)
-    IF EXISTS (
-        SELECT 1
-        FROM @items i
-        LEFT JOIN dbo.Products p ON p.productId = i.productId
-        WHERE p.productId IS NULL
-    )
-    BEGIN
-        THROW 50004, 'One or more products do not exist.', 1;
-    END
+  IF EXISTS (
+    SELECT 1
+    FROM @items i
+    LEFT JOIN dbo.Products p ON p.productId = i.productId
+    WHERE p.productId IS NULL
+  )
+    THROW 50004, 'One or more products do not exist.', 1;
 
-    BEGIN TRAN;
+BEGIN TRAN;
 
-        INSERT INTO dbo.Orders(customerId, status)
-        VALUES (@customerId, 'Created');
+INSERT INTO dbo.Orders(invoiceDate, customerId)
+VALUES (ISNULL(@invoiceDate, SYSUTCDATETIME()), @customerId);
 
-        DECLARE @invoiceNumber INT = SCOPE_IDENTITY();
+DECLARE @invoiceNumber INT = SCOPE_IDENTITY();
 
-        INSERT INTO dbo.OrderItems(invoiceNumber, productId, quantity, unitPrice)
-        SELECT
-            @invoiceNumber,
-            i.productId,
-            i.quantity,
-            p.unitPrice
-        FROM @items i
-        JOIN dbo.Products p ON p.productId = i.productId;
+INSERT INTO dbo.LineItems(invoiceNumber, productId, quantity, productCost)
+SELECT
+    @invoiceNumber,
+    i.productId,
+    i.quantity,
+    p.productCost
+FROM @items i
+         JOIN dbo.Products p ON p.productId = i.productId;
 
-    COMMIT TRAN;
+COMMIT TRAN;
 
-    SELECT @invoiceNumber AS invoiceNumber;
+SELECT @invoiceNumber AS invoiceNumber;
 END
 GO

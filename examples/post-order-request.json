@@ -1,0 +1,16 @@
+{
+  "invoiceData": {
+    "invoiceDate": "2024-12-20T14:30:00Z",
+    "customerId": "AA5FD07A-05D6-460F-B8E3-6A09142F9D71"
+  },
+  "products": [
+    {
+      "productId": "26812D43-CEE0-4413-9A1B-0B2EABF7E92C",
+      "quantity": 2
+    },
+    {
+      "productId": "3C85F645-CE57-43A8-B192-7F46F8BBC273",
+      "quantity": 5
+    }
+  ]
+}
