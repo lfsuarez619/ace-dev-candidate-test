@@ -1,0 +1,256 @@
+{
+	"info": {
+		"_postman_id": "0e746236-36ef-4c2d-ac42-9f6dd556fced",
+		"name": "Ace-Recruiting-Test-Example",
+		"description": "ACE Parking Developer Assessment - Example API Endpoints\n\nThis collection demonstrates the expected behavior of the API you will build.\n\nTo test against the reference API:\n- No setup needed, uses the live Azure endpoint\n\nTo test against your local API:\n1. Create an environment in Postman\n2. Add a variable called 'baseUrl' with your local URL (e.g., http://localhost:5000)\n3. Select your environment before running requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25409651"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Is Controller Alive",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/public/hello",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"public",
+								"hello"
+							]
+						},
+						"description": "Public health check endpoint. No authentication required.\n\nExpected response: \"API Online & Available...\""
+					},
+					"response": []
+				}
+			],
+			"description": "Public endpoints that don't require authentication"
+		},
+		{
+			"name": "Customers",
+			"item": [
+				{
+					"name": "Get All Customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/customer/viewall",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"viewall"
+							]
+						},
+						"description": "Returns all customers in the database.\n\nSee examples/get-customers-response.json for expected format."
+					},
+					"response": []
+				}
+			],
+			"description": "Customer-related endpoints"
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/product/viewall",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"product",
+								"viewall"
+							]
+						},
+						"description": "Returns all products in the database.\n\nSee examples/get-products-response.json for expected format."
+					},
+					"response": []
+				}
+			],
+			"description": "Product-related endpoints"
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/order/viewall",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"order",
+								"viewall"
+							]
+						},
+						"description": "Returns a summary list of all orders (without line item details)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders with Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/order/vieworderdetail",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"order",
+								"vieworderdetail"
+							]
+						},
+						"description": "Returns all orders with their line item details included."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice Details for a given Invoice Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/order/details/5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"order",
+								"details",
+								"5"
+							]
+						},
+						"description": "Returns a specific order by invoice number, including customer details and all line items.\n\nSee examples/get-order-response.json for expected format.\n\nChange the number in the URL to retrieve different orders."
+					},
+					"response": []
+				},
+				{
+					"name": "Post New Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{apiKey}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceData\": {\n    \"invoiceDate\": \"2024-12-20T14:30:00Z\",\n    \"customerId\": \"AA5FD07A-05D6-460F-B8E3-6A09142F9D71\"\n  },\n  \"products\": [\n    {\n      \"productId\": \"26812D43-CEE0-4413-9A1B-0B2EABF7E92C\",\n      \"quantity\": 2\n    },\n    {\n      \"productId\": \"3C85F645-CE57-43A8-B192-7F46F8BBC273\",\n      \"quantity\": 5\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/order/new",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"order",
+								"new"
+							]
+						},
+						"description": "Creates a new order with the specified customer and products.\n\nSee examples/post-order-request.json for the expected request format.\n\nThe customerId and productIds must exist in the database."
+					},
+					"response": []
+				}
+			],
+			"description": "Order-related endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://candidateinvoice-bcc4a5djcrbthwep.westus3-01.azurewebsites.net",
+			"type": "string"
+		},
+		{
+			"key": "apiKey",
+			"value": "DE7405BBC91A42319C6820C48B8DCE51",
+			"type": "string"
+		}
+	]
+}
